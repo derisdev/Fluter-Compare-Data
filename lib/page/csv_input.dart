@@ -16,11 +16,15 @@ class _CSVInputState extends State<CSVInput> {
   List<MatchPattern> matchPattern = [];
 
   List<String> split = [];
+  List<String> split2 = [];
+  List<String> split3 = [];
+  List<String> split4 = [];
+  List<String> split5 = [];
+  List<String> finalSplit  = [];
+
+  String finalJawaban;
 
   bool isLoading = false;
-
-  int totalMatch = 0;
-  int totalSplit = 0;
 
   _getCSVAndConvert() async {
     setState(() {
@@ -57,31 +61,30 @@ class _CSVInputState extends State<CSVInput> {
       matchPattern.clear();
       split.clear();
 
-      split = field[3].split(';');
-      print('hasil split adalah: $split');
-      if (split.length > 1) {
-        for(var splitChild in split) {
-          search(field[2], splitChild);
+      split = field[2].split(';');
+      split2 = field[4].split(';');
+      split3 = field[6].split(';');
+      split4 = field[8].split(';');
+      split5 = field[10].split(';');
+
+      finalSplit = split+split2+split3+split4+split5;
+      
+      finalJawaban = field[1]+field[3]+field[5]+field[7]+field[9];
+
+      print('hasil split adalah: $finalSplit');
+      print('hasil jawaban adalah: $finalJawaban');
+
+        for(var splitChild in finalSplit) {
+          search(finalJawaban, splitChild);
         }
-      } else {
-        search(field[2], field[3]).then((value) async {
-          return await Future.delayed(Duration(seconds: 1));
-        });
-      }
      
-     var skor = (matchPattern.length/split.length*20)
-     +(matchPattern.length/split.length*20)
-     +(matchPattern.length/split.length*20)
-     +(matchPattern.length/split.length*20)
-     +(matchPattern.length/split.length*20);
+     var skor = (matchPattern.length/finalJawaban.split(' ').length)*100;
       
       List<dynamic> row = List();
       row.add(field[0]);
       row.add(skor.toStringAsFixed(2).toString());
       data.add(row);
 
-      totalMatch += matchPattern.length;
-      totalSplit += split.length;
 
     }
 
