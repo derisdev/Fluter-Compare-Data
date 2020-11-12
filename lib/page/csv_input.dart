@@ -16,33 +16,27 @@ class _CSVInputState extends State<CSVInput> {
   List<MatchPattern> matchPattern = [];
 
   List<String> split = [];
-  List<String> split2 = [];
-  List<String> split3 = [];
-  List<String> split4 = [];
-  List<String> split5 = [];
-  List<String> finalSplit  = [];
-
-  String finalJawaban;
 
   bool isLoading = false;
 
+  List<double> skor = [0, 0, 0, 0, 0];
+
   _getCSVAndConvert() async {
     setState(() {
-     isLoading = true; 
+      isLoading = true;
     });
     String path = await FilePicker.getFilePath();
-    if(path!=null){
-    await convertCSV(path);
-    setState(() {
-     isLoading = false; 
-    });
-    }
-    else {
+    if (path != null) {
+      await convertCSV(path);
       setState(() {
-     isLoading = false; 
-    });
+        isLoading = false;
+      });
+    } else {
+      setState(() {
+        isLoading = false;
+      });
     }
-    }
+  }
 
   convertCSV(path) async {
     final input = new File(path).openRead();
@@ -52,43 +46,36 @@ class _CSVInputState extends State<CSVInput> {
         .toList();
 
     compareString(fields);
-
   }
 
   compareString(List<List<dynamic>> fields) {
-
     for (List<dynamic> field in fields) {
       matchPattern.clear();
       split.clear();
 
-      split = field[2].split(';');
-      split2 = field[4].split(';');
-      split3 = field[6].split(';');
-      split4 = field[8].split(';');
-      split5 = field[10].split(';');
+      for (int i = 0; i < 5; i++) {
+        matchPattern.clear();
+        split.clear();
 
-      finalSplit = split+split2+split3+split4+split5;
-      
-      finalJawaban = field[1]+field[3]+field[5]+field[7]+field[9];
+        split = field[(i+1) + 5].split(';');
 
-      print('hasil split adalah: $finalSplit');
-      print('hasil jawaban adalah: $finalJawaban');
-
-        for(var splitChild in finalSplit) {
-          search(finalJawaban, splitChild);
+        for (var splitChild in split) {
+          search(field[i+1].toLowerCase(), splitChild.toLowerCase());
         }
-     
-     var skor = (matchPattern.length/finalJawaban.split(' ').length)*100;
-      
+
+        print(' kuncinya yang sama ${matchPattern.length}');
+        print('banyaknya kata kunci ada ${split.length}');
+
+        skor[i] = (matchPattern.length / split.length) * 20;
+      }
+
+      double totalSkor = skor[0]+skor[1]+skor[2]+skor[3]+skor[4];
+
       List<dynamic> row = List();
       row.add(field[0]);
-      row.add(skor.toStringAsFixed(2).toString());
+      row.add(totalSkor == null? '0' : totalSkor.toStringAsFixed(2).toString());
       data.add(row);
-
-
     }
-
-
   }
 
   Future<void> search(String text, String pattern) async {
@@ -98,6 +85,8 @@ class _CSVInputState extends State<CSVInput> {
     List<int> badchar = badCharacterHeuristic(pattern);
 
     int s = 0;
+    int isMeetFirst = 0;
+
     while (s <= (n - m)) {
       int j = m - 1;
       while (j >= 0 && pattern[j] == text[s + j]) j--;
@@ -106,8 +95,13 @@ class _CSVInputState extends State<CSVInput> {
 
         matchPattern.add(MatchPattern(s, m));
         s += (s + m < n) ? m - badchar[text.codeUnitAt(s + m)] : 1;
+
+        isMeetFirst = 1;
       } else {
         s += maxOfAnB(1, j - badchar[text.codeUnitAt(s + j)]);
+        if (isMeetFirst == 1) {
+          break;
+        }
       }
     }
   }
@@ -140,109 +134,110 @@ class _CSVInputState extends State<CSVInput> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
-            SizedBox(
-            ),
-        isLoading? Container(
-          padding: EdgeInsets.symmetric(vertical: 100),
-          child: Center(child: CircularProgressIndicator())) : 
-          data.isEmpty? Spacer(): Column(
-            children: <Widget>[
-              Table(
-            columnWidths: {
-              0: FixedColumnWidth(150.0),
-              1: FixedColumnWidth(150.0),
-            },
-            border: TableBorder.all(width: 1.0),
-            children: [
-              TableRow(
-                  children: <Widget>[
-                    Container(
-                  color: Colors.blue,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Text(
-                      'Nama',
-                      style: TextStyle(fontSize: 15.0),
-                    ),
-                  ),
-                ),
-                Container(
-                  color: Colors.blue,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Text(
-                      'Skor',
-                      style: TextStyle(fontSize: 15.0),
-                    ),
-                  ),
-                )
-                  ])
-            ]
-          ),
-              Container(
-                height: 400,
-                child: SingleChildScrollView(
-                  child: Table(
-            columnWidths: {
-                  0: FixedColumnWidth(150.0),
-                  1: FixedColumnWidth(150.0),
-            },
-            border: TableBorder.all(width: 1.0),
-            children: data.map((item) {
-                  return TableRow(
-                      children: item.map((row) {
-                    return Container(
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          row.toString(),
-                          style: TextStyle(fontSize: 15.0),
-                        ),
+            SizedBox(),
+            isLoading
+                ? Container(
+                    padding: EdgeInsets.symmetric(vertical: 100),
+                    child: Center(child: CircularProgressIndicator()))
+                : data.isEmpty
+                    ? Spacer()
+                    : Column(
+                        children: <Widget>[
+                          Table(
+                              columnWidths: {
+                                0: FixedColumnWidth(150.0),
+                                1: FixedColumnWidth(150.0),
+                              },
+                              border: TableBorder.all(width: 1.0),
+                              children: [
+                                TableRow(children: <Widget>[
+                                  Container(
+                                    color: Colors.blue,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Text(
+                                        'Nama',
+                                        style: TextStyle(fontSize: 15.0),
+                                      ),
+                                    ),
+                                  ),
+                                  Container(
+                                    color: Colors.blue,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Text(
+                                        'Skor',
+                                        style: TextStyle(fontSize: 15.0),
+                                      ),
+                                    ),
+                                  )
+                                ])
+                              ]),
+                          Container(
+                            height: 400,
+                            child: SingleChildScrollView(
+                              child: Table(
+                                columnWidths: {
+                                  0: FixedColumnWidth(150.0),
+                                  1: FixedColumnWidth(150.0),
+                                },
+                                border: TableBorder.all(width: 1.0),
+                                children: data.map((item) {
+                                  return TableRow(
+                                      children: item.map((row) {
+                                    return Container(
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Text(
+                                          row.toString(),
+                                          style: TextStyle(fontSize: 15.0),
+                                        ),
+                                      ),
+                                    );
+                                  }).toList());
+                                }).toList(),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    );
-                  }).toList());
-            }).toList(),
-          ),
-                ),
-              ),
-            ],
-          ),
-           Container(
-          width: 100,
-          height: 50,
-          child: data.isEmpty? RaisedButton(
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10)),
-            color: Colors.blue,
-            child: Text(
-              'Import',
-              style: TextStyle(color: Colors.white, fontSize: 17),
+            Container(
+              width: 100,
+              height: 50,
+              child: data.isEmpty
+                  ? RaisedButton(
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                      color: Colors.blue,
+                      child: Text(
+                        'Import',
+                        style: TextStyle(color: Colors.white, fontSize: 17),
+                      ),
+                      onPressed: () {
+                        _getCSVAndConvert();
+                      },
+                    )
+                  : RaisedButton(
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                      color: Colors.blue,
+                      child: Text(
+                        'Clear',
+                        style: TextStyle(color: Colors.white, fontSize: 17),
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          data.clear();
+                        });
+                      },
+                    ),
             ),
-            onPressed: () {
-              _getCSVAndConvert();
-            },
-          ):
-          RaisedButton(
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10)),
-            color: Colors.blue,
-            child: Text(
-              'Clear',
-              style: TextStyle(color: Colors.white, fontSize: 17),
-            ),
-            onPressed: () {
-              setState(() {
-               data.clear(); 
-              });
-            },
-          ) 
-          ,
-        ),
-        SizedBox(height: 10,)
+            SizedBox(
+              height: 10,
+            )
           ],
         ),
       ),
     );
   }
-
 }
